@@ -1,0 +1,20 @@
+Metadata-Version: 2.4
+Name: protein_weaving
+Version: 0.1.0
+Summary: Convert 3D protein structures and meshes into physically-weavable triaxial basketry patterns
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: numpy>=1.24
+Requires-Dist: trimesh>=4.0
+Requires-Dist: scikit-image>=0.21
+Requires-Dist: scipy>=1.10
+Requires-Dist: matplotlib>=3.7
+Requires-Dist: click>=8.0
+Requires-Dist: networkx>=3.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
+Provides-Extra: optional
+Requires-Dist: plotly; extra == "optional"
+Requires-Dist: cairosvg; extra == "optional"
+Requires-Dist: xatlas; extra == "optional"

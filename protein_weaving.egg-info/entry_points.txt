@@ -1,0 +1,3 @@
+[console_scripts]
+kagome_weaving = protein_weaving.cli:kagome_main
+protein_weaving = protein_weaving.cli:main

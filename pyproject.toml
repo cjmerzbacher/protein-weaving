@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "protein_weaving"
+version = "0.1.0"
+description = "Convert 3D protein structures and meshes into physically-weavable triaxial basketry patterns"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.24",
+    "trimesh>=4.0",
+    "scikit-image>=0.21",
+    "scipy>=1.10",
+    "matplotlib>=3.7",
+    "click>=8.0",
+    "networkx>=3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+]
+optional = [
+    "plotly",
+    "cairosvg",
+    "xatlas",
+]
+
+[project.scripts]
+protein_weaving = "protein_weaving.cli:main"
+kagome_weaving = "protein_weaving.cli:kagome_main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["protein_weaving*"]
