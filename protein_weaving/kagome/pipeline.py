@@ -57,6 +57,7 @@ def weave_kagome(
     strand_width: float = 2.0,
     verbose: bool = False,
     no_color: bool = False,
+    no_color_alpha: float = 0.35,
 ) -> WeavingPattern:
     """Build a Kagome weave pattern from a singularity specification.
 
@@ -222,7 +223,8 @@ def weave_kagome(
             strand_width=strand_width, verbose=verbose, no_color=no_color,
         )
     if "png" in formats:
-        render_3d_png(pattern, output_dir / f"{stem}_3d.png", verbose=verbose)
+        render_3d_png(pattern, output_dir / f"{stem}_3d.png", verbose=verbose,
+                      no_color=no_color, no_color_alpha=no_color_alpha)
     if "html" in formats:
         render_3d_html(pattern, output_dir / f"{stem}_3d.html", verbose=verbose)
     if "json" in formats:

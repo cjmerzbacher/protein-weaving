@@ -24,6 +24,7 @@ def weave_pdb(
     crochet_stitch_mm: float | None = None,
     verbose: bool = False,
     no_color: bool = False,
+    no_color_alpha: float = 0.35,
 ) -> WeavingPattern:
     """Full pipeline: PDB file → weaving pattern + output files.
 
@@ -104,6 +105,7 @@ def weave_pdb(
         crochet_stitch_mm=crochet_stitch_mm,
         verbose=verbose,
         no_color=no_color,
+        no_color_alpha=no_color_alpha,
         _step_offset=4,
         _total_steps=3,
     )
@@ -118,6 +120,7 @@ def weave_mesh(
     crochet_stitch_mm: float | None = None,
     verbose: bool = False,
     no_color: bool = False,
+    no_color_alpha: float = 0.35,
     _step_offset: int = 0,
     _total_steps: int = 3,
 ) -> WeavingPattern:
@@ -213,7 +216,8 @@ def weave_mesh(
         render_pdf(pattern, output_dir / f"{stem}.pdf",
                    strand_width=strand_width, verbose=verbose, no_color=no_color)
     if "png" in formats:
-        render_3d_png(pattern, output_dir / f"{stem}_3d.png", verbose=verbose)
+        render_3d_png(pattern, output_dir / f"{stem}_3d.png", verbose=verbose,
+                      no_color=no_color, no_color_alpha=no_color_alpha)
     if "html" in formats:
         render_3d_html(pattern, output_dir / f"{stem}_3d.html", verbose=verbose)
     if "json" in formats:

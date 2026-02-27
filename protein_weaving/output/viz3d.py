@@ -59,6 +59,8 @@ def render_3d_png(
     dpi: int = 150,
     verbose: bool = False,
     crossing_displacement: float | None = None,
+    no_color: bool = False,
+    no_color_alpha: float = 0.35,
 ) -> Path:
     """Render a matplotlib 3D view of strands on the mesh."""
     output_path = Path(output_path)
@@ -73,28 +75,52 @@ def render_3d_png(
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111, projection="3d")
 
+    if no_color:
+        fig.patch.set_facecolor("black")
+        ax.patch.set_facecolor("black")   # axes margin area behind the 3D box
+        for pane in (ax.xaxis.pane, ax.yaxis.pane, ax.zaxis.pane):
+            pane.fill = True
+            pane.set_facecolor("black")
+            pane.set_edgecolor("#333333")
+        for axis in (ax.xaxis, ax.yaxis, ax.zaxis):
+            axis._axinfo["grid"]["color"] = "white"
+        ax.tick_params(axis="x", colors="white")
+        ax.tick_params(axis="y", colors="white")
+        ax.tick_params(axis="z", colors="white")
+        ax.xaxis.label.set_color("white")
+        ax.yaxis.label.set_color("white")
+        ax.zaxis.label.set_color("white")
+        ax.title.set_color("white")
+
     # Draw mesh as semi-transparent surface
+    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
     verts = np.array(pattern.mesh.vertices)
     faces = np.array(pattern.mesh.faces)
-    from mpl_toolkits.mplot3d.art3d import Poly3DCollection
     mesh_polys = verts[faces]
-    poly_col = Poly3DCollection(mesh_polys, alpha=0.08, facecolor="#cccccc",
+    mesh_facecolor = "#2a2a2a" if no_color else "#cccccc"
+    poly_col = Poly3DCollection(mesh_polys, alpha=0.08, facecolor=mesh_facecolor,
                                 edgecolor="none")
     ax.add_collection3d(poly_col)
 
-    # Draw strands
+    # Draw strands — one Line3DCollection per family to avoid per-strand artists
+    from mpl_toolkits.mplot3d.art3d import Line3DCollection
+    from collections import defaultdict
+
+    family_segments: dict[int, list[np.ndarray]] = defaultdict(list)
     plotted = 0
     for strand in pattern.strands:
         if len(strand.vertex_positions_3d) < 2:
             continue
-        if displaced is not None:
-            pts = np.array(displaced[strand.strand_id])
-        else:
-            pts = np.array(strand.vertex_positions_3d)
-        col = _FAMILY_COLOURS[strand.family % len(_FAMILY_COLOURS)]
-        ax.plot(pts[:, 0], pts[:, 1], pts[:, 2],
-                color=col, linewidth=0.8, alpha=0.7)
+        pts = np.array(displaced[strand.strand_id]) if displaced is not None \
+            else np.array(strand.vertex_positions_3d)
+        family_segments[strand.family].append(pts)
         plotted += 1
+
+    for family, segments in sorted(family_segments.items()):
+        col = "#ffffff" if no_color else _FAMILY_COLOURS[family % len(_FAMILY_COLOURS)]
+        alpha = no_color_alpha if no_color else 0.7
+        lc = Line3DCollection(segments, colors=col, linewidths=0.8, alpha=alpha)
+        ax.add_collection3d(lc, autolim=False)
 
     # Axis limits from mesh
     lo = verts.min(axis=0)
@@ -109,7 +135,7 @@ def render_3d_png(
     ax.set_box_aspect([hi[i] - lo[i] for i in range(3)])
 
     plt.tight_layout()
-    fig.savefig(str(output_path), dpi=dpi)
+    fig.savefig(str(output_path), dpi=dpi, facecolor=fig.get_facecolor())
     plt.close(fig)
 
     if verbose:
@@ -160,25 +186,34 @@ def render_3d_html(
         showlegend=False,
     ))
 
-    # Strand lines
-    plotted_families: set[int] = set()
+    # Strand lines — batch all strands into one trace per family using None
+    # separators to break the line between strands. Reduces N traces → 3 traces.
+    from collections import defaultdict
+
+    family_coords: dict[int, tuple[list, list, list]] = defaultdict(
+        lambda: ([], [], [])
+    )
     for strand in pattern.strands:
         if len(strand.vertex_positions_3d) < 2:
             continue
-        if displaced is not None:
-            pts = np.array(displaced[strand.strand_id])
-        else:
-            pts = np.array(strand.vertex_positions_3d)
-        col = _FAMILY_COLOURS[strand.family % len(_FAMILY_COLOURS)]
-        show = strand.family not in plotted_families
-        plotted_families.add(strand.family)
+        pts = np.array(displaced[strand.strand_id]) if displaced is not None \
+            else np.array(strand.vertex_positions_3d)
+        xs, ys, zs = family_coords[strand.family]
+        if xs:
+            xs.append(None); ys.append(None); zs.append(None)
+        xs.extend(pts[:, 0].tolist())
+        ys.extend(pts[:, 1].tolist())
+        zs.extend(pts[:, 2].tolist())
+
+    for family, (xs, ys, zs) in sorted(family_coords.items()):
+        col = _FAMILY_COLOURS[family % len(_FAMILY_COLOURS)]
         fig.add_trace(go.Scatter3d(
-            x=pts[:, 0], y=pts[:, 1], z=pts[:, 2],
+            x=xs, y=ys, z=zs,
             mode="lines",
             line={"color": col, "width": 2},
-            name=f"family {strand.family}",
-            showlegend=show,
-            legendgroup=f"family {strand.family}",
+            name=f"family {family}",
+            showlegend=True,
+            legendgroup=f"family {family}",
         ))
 
     fig.update_layout(

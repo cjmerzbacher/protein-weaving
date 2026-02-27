@@ -38,6 +38,9 @@ protein_weaving structure.pdb --formats svg,html,txt --verbose
 # Weave an existing mesh
 protein_weaving mesh.obj --scheme triaxial --output-dir ./output
 
+# Fast monochrome render (white strands on black, skips DSATUR)
+protein_weaving structure.pdb --scheme triaxial --no-color --formats svg,png --verbose
+
 # Generate a flat Kagome weave
 kagome_weaving --rows 12 --cols 12 --formats svg,txt
 
@@ -70,15 +73,16 @@ protein_weaving INPUT [OPTIONS]
 | `--fill-voids` | off | Fill enclosed surface voids before meshing (PDB/CIF only) |
 | `--smooth-sigma` | `1.5` | Gaussian blur sigma in voxels after void-filling |
 | `--stitch-width` | — | Physical stitch width in mm for crochet pattern header |
-| `--verbose` | off | Print progress messages |
+| `--verbose` | off | Print progress messages and tqdm progress bars |
+| `--no-color` | off | Skip DSATUR edge colouring; render all strands white on black |
 
 ### Output Formats
 
 | Format | Flag | Description |
 |---|---|---|
-| SVG | `svg` | Flat weaving schematic with colour-coded strands and gap visualization at under-crossings |
+| SVG | `svg` | Flat weaving schematic with colour-coded strands and gap visualization at under-crossings. With `--no-color`: white strands on black background |
 | PDF | `pdf` | PDF version of the SVG (requires `cairosvg`) |
-| PNG | `png` | Matplotlib 3D rendering with semi-transparent mesh surface |
+| PNG | `png` | Matplotlib 3D rendering with semi-transparent mesh surface. With `--no-color`: black background, grey grid, white strands |
 | HTML | `html` | Interactive Plotly 3D visualization (requires `plotly`) |
 | JSON | `json` | Machine-readable weaving instructions |
 | TXT | `txt` | Human-readable weaving instructions |
@@ -102,6 +106,9 @@ protein_weaving structure.pdb --formats crochet,txt --stitch-width 5.0
 
 # Fill enclosed voids before meshing (useful for hollow proteins)
 protein_weaving structure.pdb --fill-voids --smooth-sigma 2.0 --verbose
+
+# Fast monochrome render — skips DSATUR, white strands on black
+protein_weaving structure.pdb --scheme triaxial --no-color --formats svg,png --verbose
 ```
 
 ---
@@ -129,7 +136,8 @@ Generates a Kagome triangular lattice and optionally introduces curvature singul
 | `--output-dir` | `.` | Output directory |
 | `--formats` | `svg,json,txt` | Output formats (same options as `protein_weaving`) |
 | `--strand-width` | `2.0` | SVG strand line width in points |
-| `--verbose` | off | Print progress messages |
+| `--verbose` | off | Print progress messages and tqdm progress bars |
+| `--no-color` | off | Skip DSATUR edge colouring; render all strands white on black |
 
 ### Singularity Specification
 
@@ -165,6 +173,9 @@ kagome_weaving --rows 20 --cols 20 \
     --singularity 0.8,0.8,7 \
     --bump-height 5.0 \
     --formats svg,html,json --verbose
+
+# Fast monochrome render
+kagome_weaving --rows 14 --cols 14 --singularity 0.5,0.5,5 --no-color --formats svg,png
 ```
 
 ---
@@ -183,6 +194,7 @@ pattern = weave_pdb(
     resolution=0.5,
     simplify_factor=0.1,
     verbose=True,
+    no_color=True,   # optional: skip DSATUR, white-on-black output
 )
 
 # Weave from an existing trimesh
@@ -229,6 +241,8 @@ Best for: meshes of any topology where a simple two-strand interlace is desired.
 
 3-edge colouring algorithm. The mesh is triangulated, then a proper 3-edge colouring is computed on the dual cubic graph (via DSATUR greedy colouring on the line graph). Strands follow each edge-colour family, with a cyclic lock: family *k* passes over family *(k+1) mod 3*.
 
+Passing `--no-color` replaces DSATUR with a fast face-by-face greedy colouring. This gives full tqdm progress visibility and is faster on large meshes, at the cost of a less mathematically optimal edge assignment. All strands are rendered white on a black background regardless of family.
+
 Best for: triangulated meshes; produces the balanced three-direction structure of traditional triaxial basketry.
 
 ---
@@ -263,7 +277,7 @@ For `kagome_weaving`, the prefix is `kagome_weaving`.
 | `matplotlib` | 3D PNG rendering |
 | `click` | CLI argument parsing |
 | `networkx` | Graph algorithms for 3-edge colouring |
-| `tqdm` | Progress bars during strand tracing |
+| `tqdm` | Progress bars during mesh colouring and strand tracing (shown with `--verbose`) |
 | `plotly` *(optional)* | Interactive HTML visualization |
 | `cairosvg` *(optional)* | SVG → PDF conversion |
 | `xatlas` *(optional)* | Advanced UV unwrapping |

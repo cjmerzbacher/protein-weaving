@@ -43,6 +43,8 @@ import click
 @click.option("--verbose", is_flag=True, help="Print progress messages.")
 @click.option("--no-color", is_flag=True, default=False,
               help="Skip DSATUR edge colouring; render all strands white on black.")
+@click.option("--no-color-alpha", default=0.35, show_default=True, type=float,
+              help="Strand opacity used with --no-color (0=transparent, 1=opaque).")
 def main(
     input: str,
     scheme: str,
@@ -56,6 +58,7 @@ def main(
     stitch_width: float | None,
     verbose: bool,
     no_color: bool,
+    no_color_alpha: float,
 ) -> None:
     """Convert INPUT (.pdb or mesh file) into a weavable basketry pattern.
 
@@ -81,6 +84,7 @@ def main(
             crochet_stitch_mm=stitch_width,
             verbose=verbose,
             no_color=no_color,
+            no_color_alpha=no_color_alpha,
         )
     else:
         # Assume mesh file
@@ -106,6 +110,7 @@ def main(
             crochet_stitch_mm=stitch_width,
             verbose=verbose,
             no_color=no_color,
+            no_color_alpha=no_color_alpha,
         )
 
 
@@ -185,6 +190,8 @@ def _parse_singularity(value: str) -> dict:
 @click.option("--verbose", is_flag=True, help="Print progress messages.")
 @click.option("--no-color", is_flag=True, default=False,
               help="Skip DSATUR edge colouring; render all strands white on black.")
+@click.option("--no-color-alpha", default=0.35, show_default=True, type=float,
+              help="Strand opacity used with --no-color (0=transparent, 1=opaque).")
 def kagome_main(
     rows: int,
     cols: int,
@@ -197,6 +204,7 @@ def kagome_main(
     strand_width: float,
     verbose: bool,
     no_color: bool,
+    no_color_alpha: float,
 ) -> None:
     """Generate a triaxial Kagome weaving pattern with singularities.
 
@@ -233,4 +241,5 @@ def kagome_main(
         strand_width=strand_width,
         verbose=verbose,
         no_color=no_color,
+        no_color_alpha=no_color_alpha,
     )
