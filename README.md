@@ -263,6 +263,7 @@ For `kagome_weaving`, the prefix is `kagome_weaving`.
 | `matplotlib` | 3D PNG rendering |
 | `click` | CLI argument parsing |
 | `networkx` | Graph algorithms for 3-edge colouring |
+| `tqdm` | Progress bars during strand tracing |
 | `plotly` *(optional)* | Interactive HTML visualization |
 | `cairosvg` *(optional)* | SVG → PDF conversion |
 | `xatlas` *(optional)* | Advanced UV unwrapping |

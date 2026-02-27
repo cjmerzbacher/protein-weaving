@@ -197,7 +197,7 @@ def weave_kagome(
     if verbose:
         print(f"[{step}/{total_steps}] Tracing strands …")
     pattern = WeavingPattern(mesh=mesh, scheme="triaxial")
-    pattern = trace_triaxial_strands(tri_mesh, pattern)
+    pattern = trace_triaxial_strands(tri_mesh, pattern, verbose=verbose)
     if verbose:
         n_closed = sum(1 for s in pattern.strands if s.is_closed)
         print(

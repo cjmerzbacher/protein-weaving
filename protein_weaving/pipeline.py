@@ -172,7 +172,7 @@ def weave_mesh(
             step += 1
             if verbose:
                 print(f"[{step}/{total}] Tracing quad strands …")
-            pattern = trace_quad_strands(qm, pattern)
+            pattern = trace_quad_strands(qm, pattern, verbose=verbose)
 
         elif scheme == "triaxial":
             tw = TriaxialWeaving()
@@ -182,7 +182,7 @@ def weave_mesh(
             step += 1
             if verbose:
                 print(f"[{step}/{total}] Tracing triaxial strands …")
-            pattern = trace_triaxial_strands(tm, pattern)
+            pattern = trace_triaxial_strands(tm, pattern, verbose=verbose)
 
         else:
             raise ValueError(f"Unknown scheme: {scheme!r}. Use 'quad' or 'triaxial'.")

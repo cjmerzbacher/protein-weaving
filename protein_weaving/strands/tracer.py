@@ -5,6 +5,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 import numpy as np
+from tqdm import tqdm
 
 from protein_weaving.strands.models import Strand, Crossing, WeavingPattern
 
@@ -24,6 +25,7 @@ def _edge_midpoint(vertices: np.ndarray, a: int, b: int) -> np.ndarray:
 def trace_quad_strands(
     quad_mesh: "QuadMesh",
     pattern: WeavingPattern,
+    verbose: bool = False,
 ) -> WeavingPattern:
     """Trace strands and assign crossings for a QuadMesh.
 
@@ -77,8 +79,11 @@ def trace_quad_strands(
 
     # Iterate all 4 starting entry edges; reverse entries are marked visited
     # during tracing so each physical crossing direction is traced exactly once.
+    pbar = tqdm(total=Q * 4, desc="Tracing quad strands", disable=not verbose,
+                unit="edge", leave=False)
     for start_e in range(4):
         for start_q in range(Q):
+            pbar.update(1)
             if (start_q, start_e) in visited:
                 continue
 
@@ -151,6 +156,8 @@ def trace_quad_strands(
                 ))
                 strand_id += 1
 
+    pbar.close()
+
     # --- Resolve strand_b_id and over/under for every crossing ---
     # Build: crossing_id → list of strand_ids that pass through it
     cr_strands: dict[int, list[int]] = defaultdict(list)
@@ -191,6 +198,7 @@ def trace_quad_strands(
 def trace_triaxial_strands(
     tri_mesh: "TriaxialMesh",
     pattern: WeavingPattern,
+    verbose: bool = False,
 ) -> WeavingPattern:
     """Trace strands and assign crossings for a TriaxialMesh.
 
@@ -236,8 +244,12 @@ def trace_triaxial_strands(
     # Both entry AND exit are marked so reverse strands are not created.
     visited: set[tuple[int, int, int]] = set()
 
+    F = len(faces)
+    pbar = tqdm(total=3 * F, desc="Tracing triaxial strands", disable=not verbose,
+                unit="face", leave=False)
     for family in range(3):
-        for start_f in range(len(faces)):
+        for start_f in range(F):
+            pbar.update(1)
             face_ec = [int(edge_colors[faces_unique_edges[start_f][i]])
                        for i in range(3)]
             non_fam = [i for i, c in enumerate(face_ec) if c != family]
@@ -313,6 +325,8 @@ def trace_triaxial_strands(
                         is_closed=is_closed,
                     ))
                     strand_id += 1
+
+    pbar.close()
 
     # --- Build crossings in post-processing ---
     # Each crossing is between two strands of different families at the same face.
