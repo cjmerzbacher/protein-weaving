@@ -56,6 +56,7 @@ def weave_kagome(
     formats: list[str] | None = None,
     strand_width: float = 2.0,
     verbose: bool = False,
+    no_color: bool = False,
 ) -> WeavingPattern:
     """Build a Kagome weave pattern from a singularity specification.
 
@@ -186,7 +187,7 @@ def weave_kagome(
     if verbose:
         print(f"[{step}/{total_steps}] Building triaxial weave …")
     tw = TriaxialWeaving()
-    tri_mesh = tw.build_weave_mesh(mesh)
+    tri_mesh = tw.build_weave_mesh(mesh, verbose=verbose, no_color=no_color)
     if verbose:
         print(f"      {len(tri_mesh.edge_colors)} edges coloured")
 
@@ -213,12 +214,12 @@ def weave_kagome(
     if "svg" in formats:
         render_svg(
             pattern, output_dir / f"{stem}.svg",
-            strand_width=strand_width, verbose=verbose,
+            strand_width=strand_width, verbose=verbose, no_color=no_color,
         )
     if "pdf" in formats:
         render_pdf(
             pattern, output_dir / f"{stem}.pdf",
-            strand_width=strand_width, verbose=verbose,
+            strand_width=strand_width, verbose=verbose, no_color=no_color,
         )
     if "png" in formats:
         render_3d_png(pattern, output_dir / f"{stem}_3d.png", verbose=verbose)

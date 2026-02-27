@@ -23,6 +23,7 @@ def weave_pdb(
     smooth_sigma: float = 1.5,
     crochet_stitch_mm: float | None = None,
     verbose: bool = False,
+    no_color: bool = False,
 ) -> WeavingPattern:
     """Full pipeline: PDB file → weaving pattern + output files.
 
@@ -102,6 +103,7 @@ def weave_pdb(
         strand_width=strand_width,
         crochet_stitch_mm=crochet_stitch_mm,
         verbose=verbose,
+        no_color=no_color,
         _step_offset=4,
         _total_steps=3,
     )
@@ -115,6 +117,7 @@ def weave_mesh(
     strand_width: float = 2.0,
     crochet_stitch_mm: float | None = None,
     verbose: bool = False,
+    no_color: bool = False,
     _step_offset: int = 0,
     _total_steps: int = 3,
 ) -> WeavingPattern:
@@ -176,7 +179,7 @@ def weave_mesh(
 
         elif scheme == "triaxial":
             tw = TriaxialWeaving()
-            tm = tw.build_weave_mesh(mesh)
+            tm = tw.build_weave_mesh(mesh, verbose=verbose, no_color=no_color)
             if verbose:
                 print(f"      Triaxial mesh: {len(tm.edge_colors)} edges coloured")
             step += 1
@@ -205,10 +208,10 @@ def weave_mesh(
 
     if "svg" in formats:
         render_svg(pattern, output_dir / f"{stem}.svg",
-                   strand_width=strand_width, verbose=verbose)
+                   strand_width=strand_width, verbose=verbose, no_color=no_color)
     if "pdf" in formats:
         render_pdf(pattern, output_dir / f"{stem}.pdf",
-                   strand_width=strand_width, verbose=verbose)
+                   strand_width=strand_width, verbose=verbose, no_color=no_color)
     if "png" in formats:
         render_3d_png(pattern, output_dir / f"{stem}_3d.png", verbose=verbose)
     if "html" in formats:

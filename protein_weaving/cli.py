@@ -41,6 +41,8 @@ import click
 @click.option("--stitch-width", default=None, type=float,
               help="Physical stitch width in mm for crochet pattern header (default 6.0).")
 @click.option("--verbose", is_flag=True, help="Print progress messages.")
+@click.option("--no-color", is_flag=True, default=False,
+              help="Skip DSATUR edge colouring; render all strands white on black.")
 def main(
     input: str,
     scheme: str,
@@ -53,6 +55,7 @@ def main(
     smooth_sigma: float,
     stitch_width: float | None,
     verbose: bool,
+    no_color: bool,
 ) -> None:
     """Convert INPUT (.pdb or mesh file) into a weavable basketry pattern.
 
@@ -77,6 +80,7 @@ def main(
             smooth_sigma=smooth_sigma,
             crochet_stitch_mm=stitch_width,
             verbose=verbose,
+            no_color=no_color,
         )
     else:
         # Assume mesh file
@@ -101,6 +105,7 @@ def main(
             strand_width=strand_width,
             crochet_stitch_mm=stitch_width,
             verbose=verbose,
+            no_color=no_color,
         )
 
 
@@ -178,6 +183,8 @@ def _parse_singularity(value: str) -> dict:
     help="SVG strand line width in points.",
 )
 @click.option("--verbose", is_flag=True, help="Print progress messages.")
+@click.option("--no-color", is_flag=True, default=False,
+              help="Skip DSATUR edge colouring; render all strands white on black.")
 def kagome_main(
     rows: int,
     cols: int,
@@ -189,6 +196,7 @@ def kagome_main(
     formats: str,
     strand_width: float,
     verbose: bool,
+    no_color: bool,
 ) -> None:
     """Generate a triaxial Kagome weaving pattern with singularities.
 
@@ -224,4 +232,5 @@ def kagome_main(
         formats=fmt_list,
         strand_width=strand_width,
         verbose=verbose,
+        no_color=no_color,
     )

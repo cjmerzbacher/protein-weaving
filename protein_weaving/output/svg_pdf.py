@@ -203,6 +203,7 @@ def render_svg(
     strand_width: float = 2.0,
     canvas_size: float = 800.0,
     verbose: bool = False,
+    no_color: bool = False,
 ) -> Path:
     """Render a flat weaving pattern to an SVG file.
 
@@ -248,9 +249,10 @@ def render_svg(
         "viewBox": f"0 0 {canvas_size} {canvas_size}",
     })
     # Background
+    bg_colour = "#000000" if no_color else "white"
     ET.SubElement(svg, "rect", {
         "width": str(canvas_size), "height": str(canvas_size),
-        "fill": "white",
+        "fill": bg_colour,
     })
 
     for strand in pattern.strands:
@@ -258,7 +260,7 @@ def render_svg(
         if not uv_pts:
             continue
 
-        colour = _FAMILY_COLOURS[strand.family % len(_FAMILY_COLOURS)]
+        colour = "#ffffff" if no_color else _FAMILY_COLOURS[strand.family % len(_FAMILY_COLOURS)]
         # Determine under-crossings for this strand
         gap_uvs = under_crossings.get(strand.strand_id, [])
         paths = _polyline_with_gaps(
@@ -291,6 +293,7 @@ def render_pdf(
     strand_width: float = 2.0,
     canvas_size: float = 800.0,
     verbose: bool = False,
+    no_color: bool = False,
 ) -> Path | None:
     """Convert the SVG flat pattern to PDF via cairosvg.
 
@@ -299,7 +302,7 @@ def render_pdf(
     output_path = Path(output_path)
     svg_path = output_path.with_suffix(".svg")
     render_svg(pattern, svg_path, strand_width=strand_width,
-               canvas_size=canvas_size, verbose=verbose)
+               canvas_size=canvas_size, verbose=verbose, no_color=no_color)
 
     try:
         import cairosvg

@@ -19,6 +19,7 @@ import warnings
 import numpy as np
 import trimesh
 import networkx as nx
+from tqdm import tqdm
 
 from protein_weaving.weaving.base import WeavingScheme
 
@@ -36,7 +37,8 @@ class TriaxialMesh:
 class TriaxialWeaving(WeavingScheme):
     """3-edge-colouring triaxial weaving scheme."""
 
-    def build_weave_mesh(self, mesh: trimesh.Trimesh) -> TriaxialMesh:
+    def build_weave_mesh(self, mesh: trimesh.Trimesh, verbose: bool = False,
+                         no_color: bool = False) -> TriaxialMesh:
         """3-colour the edges of a triangulated *mesh*.
 
         Builds the dual cubic graph (one node per face, one edge per shared
@@ -67,7 +69,8 @@ class TriaxialWeaving(WeavingScheme):
         # Build the dual graph with each edge tagged by its primal edge index
         G: nx.Graph = nx.Graph()
         G.add_nodes_from(range(n_faces))
-        for fa, fb in face_adj:
+        for fa, fb in tqdm(face_adj, desc="Building dual graph",
+                           disable=not verbose, unit="face-pair", leave=False):
             fa, fb = int(fa), int(fb)
             sa = set(int(e) for e in faces_unique_edges[fa])
             sb = set(int(e) for e in faces_unique_edges[fb])
@@ -79,43 +82,61 @@ class TriaxialWeaving(WeavingScheme):
             if not G.has_edge(fa, fb):
                 G.add_edge(fa, fb, primal_edge=ei)
 
-        # 3-edge-colour the dual graph via DSATUR on its line graph
-        L = nx.line_graph(G)
-
-        # Transfer primal_edge attribute to L's node labels
-        # L nodes are (fa, fb) tuples; recover primal edge from G
-        colouring = nx.coloring.greedy_color(L, strategy="DSATUR")
-
-        # Map colouring back: L-node (fa, fb) → colour c → mesh edge index → c
         edge_colors = np.full(n_edges, -1, dtype=np.int8)
 
-        for (fa, fb), c in colouring.items():
-            # Retrieve primal edge index
-            data = G.edges[fa, fb]
-            ei = data["primal_edge"]
-            # Normalise colour to {0,1,2} (DSATUR may use more if graph is
-            # Class 2; clamp extra colours with a warning)
-            edge_colors[ei] = int(c) % 3
-
-        # Any edge not in the dual (boundary / non-shared) gets colour 0
-        uncoloured = edge_colors == -1
-        if uncoloured.any():
-            # Assign the "missing" colour for each boundary edge:
-            # scan each face and pick the colour not already used
-            for f, fe in enumerate(faces_unique_edges):
+        if no_color:
+            # Fast greedy face-by-face colouring — skips DSATUR entirely.
+            # Assigns the locally missing colour to each uncoloured edge in one
+            # pass over the faces, giving full tqdm visibility.
+            for f, fe in tqdm(enumerate(faces_unique_edges), total=n_faces,
+                              desc="Colouring edges (fast)", disable=not verbose,
+                              unit="face", leave=False):
                 used = {int(edge_colors[e]) for e in fe if edge_colors[e] >= 0}
-                for li, ei in enumerate(fe):
+                for ei in fe:
                     if edge_colors[ei] == -1:
                         missing = list({0, 1, 2} - used)
                         edge_colors[ei] = missing[0] if missing else 0
                         used.add(int(edge_colors[ei]))
+        else:
+            # 3-edge-colour the dual graph via DSATUR on its line graph
+            L = nx.line_graph(G)
 
-        # Check colouring quality
+            # Transfer primal_edge attribute to L's node labels
+            # L nodes are (fa, fb) tuples; recover primal edge from G
+            colouring = nx.coloring.greedy_color(L, strategy="DSATUR")
+
+            # Map colouring back: L-node (fa, fb) → colour c → mesh edge index → c
+            for (fa, fb), c in tqdm(colouring.items(), desc="Mapping edge colours",
+                                    disable=not verbose, unit="edge", leave=False):
+                # Retrieve primal edge index
+                data = G.edges[fa, fb]
+                ei = data["primal_edge"]
+                # Normalise colour to {0,1,2} (DSATUR may use more if graph is
+                # Class 2; clamp extra colours with a warning)
+                edge_colors[ei] = int(c) % 3
+
+            # Any edge not in the dual (boundary / non-shared) gets colour 0
+            uncoloured = edge_colors == -1
+            if uncoloured.any():
+                # Assign the "missing" colour for each boundary edge:
+                # scan each face and pick the colour not already used
+                for f, fe in tqdm(enumerate(faces_unique_edges), total=n_faces,
+                                  desc="Assigning boundary colours",
+                                  disable=not verbose, unit="face", leave=False):
+                    used = {int(edge_colors[e]) for e in fe if edge_colors[e] >= 0}
+                    for li, ei in enumerate(fe):
+                        if edge_colors[ei] == -1:
+                            missing = list({0, 1, 2} - used)
+                            edge_colors[ei] = missing[0] if missing else 0
+                            used.add(int(edge_colors[ei]))
+
+        # Check colouring quality (skip when no_color: imperfection is expected)
         bad_faces = 0
-        for fe in faces_unique_edges:
-            cols = {int(edge_colors[e]) for e in fe}
-            if cols != {0, 1, 2}:
-                bad_faces += 1
+        if not no_color:
+            for fe in faces_unique_edges:
+                cols = {int(edge_colors[e]) for e in fe}
+                if cols != {0, 1, 2}:
+                    bad_faces += 1
         if bad_faces > 0:
             warnings.warn(
                 f"Triaxial edge colouring: {bad_faces}/{n_faces} faces do not "
